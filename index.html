@@ -1,1 +1,106 @@
-a
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>2529Cloud</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #FFFFFF;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #mensaje { font-size: 18px; text-align: center; padding: 0 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="loader" id="spinner"></div>
+    <div id="mensaje">Buscando servidor...</div>
+
+    <script>
+        // Credenciales
+        var API_KEY = "AIzaSyAbpLLIlhT--dkzTc3oSTMmsLr-DnJpJUk";
+        var FOLDER_ID = "1eHWLL-y5dMrseHTK-HPXZjPj8rdBqJHo";
+
+        function mostrarError(texto) {
+            document.getElementById('spinner').style.display = 'none';
+            document.getElementById('mensaje').innerText = texto;
+        }
+
+        function descargarContenido(fileId) {
+            document.getElementById('mensaje').innerText = "Conectando al servidor...";
+            var urlContenido = "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media&key=" + API_KEY;
+
+            // Método antiguo compatible con iPad 2
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", urlContenido, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var linkCloudflare = xhr.responseText;
+                        var inicioHttp = linkCloudflare.indexOf("http");
+                        if (inicioHttp !== -1) {
+                            var linkLimpio = linkCloudflare.substring(inicioHttp).trim();
+                            window.location.replace(linkLimpio);
+                        } else {
+                            mostrarError("⚠️ El archivo no contiene un link válido.");
+                        }
+                    } else {
+                        mostrarError("⚠️ Error al descargar el link.");
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        function iniciarApp() {
+            var query = "'" + FOLDER_ID + "' in parents and name='Mi_Enlace_HFS.txt'";
+            var urlBusqueda = "https://www.googleapis.com/drive/v3/files?q=" + encodeURIComponent(query) + "&key=" + API_KEY;
+
+            // Método antiguo compatible con iPad 2
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", urlBusqueda, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var datos = JSON.parse(xhr.responseText);
+                            if (datos.files && datos.files.length > 0) {
+                                descargarContenido(datos.files[0].id);
+                            } else {
+                                mostrarError("⚠️ No se encontró Mi_Enlace_HFS.txt");
+                            }
+                        } catch(e) {
+                            mostrarError("⚠️ Error leyendo datos de Google.");
+                        }
+                    } else {
+                        mostrarError("⚠️ Error de conexión con Google Drive.");
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        window.onload = iniciarApp;
+    </script>
+</body>
+</html>
